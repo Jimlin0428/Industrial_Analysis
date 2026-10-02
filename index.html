@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PMBA 產業分析與投資策略 - 服飾零售業專案管理</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    .editable:hover { background-color: rgba(254, 240, 138, 0.35); cursor: pointer; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+  <!-- 頂部導覽列 -->
+  <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+      <div class="flex items-center space-x-3">
+        <i class="ph-bold ph-chart-line-up text-3xl text-amber-400"></i>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold tracking-tight">產業分析與投資策略｜期末專案</h1>
+          <p class="text-xs text-indigo-200">主題研究：服飾零售業（Apparel Retail Industry）</p>
+        </div>
+      </div>
+      
+      <!-- 操作控制區 -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- 管理員權限按鈕 -->
+        <button id="admin-btn" onclick="toggleAdminMode()" class="bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs px-3 py-1.5 rounded-lg border border-amber-400/40 transition flex items-center gap-1.5 font-medium shadow-sm">
+          <i id="admin-icon" class="ph-bold ph-lock-key"></i> <span id="admin-text">管理員登入 (編輯權限)</span>
+        </button>
+
+        <!-- 複製同步連結給組員 -->
+        <button onclick="copyShareableLink()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm font-medium">
+          <i class="ph-bold ph-share-network"></i> 複製組員同步連結
+        </button>
+
+        <!-- 列印 -->
+        <button onclick="window.print()" class="bg-white/10 hover:bg-white/20 text-white text-xs px-2.5 py-1.5 rounded-lg border border-white/20 transition flex items-center gap-1">
+          <i class="ph-bold ph-printer"></i> 列印
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- 狀態提醒列 -->
+    <div id="admin-banner" class="hidden bg-amber-50 border-l-4 border-amber-500 p-3 rounded-r-lg shadow-sm flex items-center justify-between text-xs text-amber-900">
+      <div class="flex items-center gap-2">
+        <i class="ph-fill ph-check-circle text-amber-600 text-lg"></i>
+        <span><strong>已取得管理員編輯權限：</strong> 您現在可以直接指派成員、並點選時程區塊修改會議時間與文字。修改後點擊右上角「複製組員同步連結」分享給同學即可！</span>
+      </div>
+      <button onclick="resetData()" class="text-rose-600 hover:underline font-semibold ml-4">恢復預設值</button>
+    </div>
+
+    <!-- 專案核心進度看板 -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
+          <i class="ph-bold ph-users-three"></i>
+        </div>
+        <div>
+          <div class="text-[11px] text-slate-500 font-medium">專案成員</div>
+          <div class="text-lg font-bold text-slate-900">8 位</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+          <i class="ph-bold ph-tree-structure"></i>
+        </div>
+        <div>
+          <div class="text-[11px] text-slate-500 font-medium">分析架構</div>
+          <div class="text-lg font-bold text-slate-900">8 大模組</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">
+          <i class="ph-bold ph-check-circle"></i>
+        </div>
+        <div>
+          <div class="text-[11px] text-slate-500 font-medium">指派認領進度</div>
+          <div class="text-lg font-bold text-emerald-600" id="assigned-count">0 / 8 已認領</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
+          <i class="ph-bold ph-flag-banner"></i>
+        </div>
+        <div>
+          <div class="text-[11px] text-slate-500 font-medium">期末交付目標</div>
+          <div class="text-lg font-bold text-amber-600">12/17 紙本+簡報</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 專案甘特圖 / 時程里程碑 (可編輯) -->
+    <section class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-2">
+          <i class="ph-bold ph-clock-countdown text-indigo-600 text-xl"></i>
+          <h2 class="text-base md:text-lg font-bold text-slate-900">專案時程與重要里程碑 (Timeline)</h2>
+        </div>
+        <span class="text-xs text-slate-400" id="edit-hint-timeline">管理員可直接點擊文字修改內容</span>
+      </div>
+
+      <div class="relative border-l-2 border-indigo-200 ml-4 space-y-6" id="timeline-container">
+        <!-- 節點動態生成 -->
+      </div>
+    </section>
+
+    <!-- 工作分配與 8 大分析矩陣模組 -->
+    <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i class="ph-bold ph-kanban text-indigo-600"></i> 服飾零售業：8 大分析模組工作分配看板
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">
+            * 經小組討論已剔除 GE 多因子矩陣，聚焦產業專屬之 8 款分析模組。
+          </p>
+        </div>
+        <div id="permission-pill" class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1.5">
+          <i class="ph-bold ph-eye"></i> 目前狀態：檢視模式
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 text-xs">
+              <th class="py-3 px-4 w-12 text-center">#</th>
+              <th class="py-3 px-4 w-44">分析框架工具</th>
+              <th class="py-3 px-4">服飾零售業之研究焦點與產出重點</th>
+              <th class="py-3 px-4 w-52">指派負責人</th>
+              <th class="py-3 px-4 w-28 text-center">狀態</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100" id="matrix-tbody">
+            <!-- 模組表格透過 JS 自動渲染 -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 小組成員資源背景池 -->
+    <section class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i class="ph-bold ph-identification-card text-indigo-600"></i> 小組成員戰力庫 (Team Roster)
+          </h2>
+          <p class="text-xs text-slate-500">點選指派時可參考成員專業背景與業界資源，發揮跨領域最大綜效。</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="roster-container">
+        <!-- 成員小卡動態生成 -->
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="bg-slate-100 border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+    PMBA 產業分析與投資策略小組協作專案平台｜2026/12/17 順利定稿與報告
+  </footer>
+
+  <script>
+    // 管理員預設密碼 (可隨意更改)
+    const ADMIN_PASSWORD = "pmba";
+    let isAdmin = false;
+
+    // 8 位組員背景資料
+    const teamMembers = [
+      { name: "林俊宏", program: "PMBA", company: "台灣人壽", industry: "金融", role: "營運", highlight: "營運流程梳理、數理結構分析" },
+      { name: "蕭錫安", program: "PMBA", company: "聯合利華", industry: "零售服務業", role: "行銷", highlight: "FMCG品牌行銷、永續/ESG跨界合作" },
+      { name: "郭亭妍 (Tanya)", program: "PMBA", company: "承策 / 鴻華先進", industry: "資訊/軟體", role: "創業/經營者", highlight: "AI導入、數位轉型、專案落地管理" },
+      { name: "陳婉萍", program: "PMBA", company: "UNIQLO", industry: "服飾製造零售業", role: "營運", highlight: "★ 服飾本業專家：人貨場落地、VM美學、現場領導" },
+      { name: "沈宛瑱", program: "PMBA", company: "台積電", industry: "製造業", role: "供應鏈/管理", highlight: "供應商稽核、風險與永續管理、ISO/RBA" },
+      { name: "陳郁羲", program: "PMBM", company: "路迦生醫", industry: "細胞治療", role: "產品管理", highlight: "精準產品管理、生醫前瞻規劃" },
+      { name: "許嘉郡", program: "PMBM", company: "台康生技", industry: "生技製藥", role: "產品管理", highlight: "CDMO 技術與專案流程控制" },
+      { name: "周昆德", program: "PMBM", company: "安可醫", industry: "生醫產業", role: "顧問", highlight: "法規政策研究、跨國市場對接與人脈資源" }
+    ];
+
+    // 預設 8 大分析模組
+    const defaultModules = [
+      { id: 1, name: "PESTEL 總體環境", desc: "通膨與原物料成本變動、跨境電商關稅與供應鏈地緣政治、永續 ESG/碳足跡法規、智慧零售與生成式 AI 穿搭應用。", assignee: "" },
+      { id: 2, name: "SCP 產業結構分析", desc: "產業集中度 (CR4/HHI)、快時尚與輕奢品牌競爭行為 (定價、促銷策略、店鋪體驗)、整體零售毛利率與存貨週轉績效。", assignee: "" },
+      { id: 3, name: "波特五力模型", desc: "同業競爭激烈程度、消費者極低之品牌轉換成本、上游布料纖維供應商議價力、新興電商/網紅品牌切入門檻、二手租衣等替代品威脅。", assignee: "" },
+      { id: 4, name: "產業生命週期", desc: "傳統實體門市的成熟/衰退期轉型挑戰、線上快時尚與機能永續服飾成長動能、市場飽和下的併購與洗牌期特徵。", assignee: "" },
+      { id: 5, name: "產業價值鏈", desc: "從紡織原紗、成衣代工 (OEM/ODM)、SPA 垂直整合、智慧倉儲即時補貨 (JIT)，到門市/OMO 虛實整合與顧客體驗。", assignee: "" },
+      { id: 6, name: "商業生態系", desc: "品牌主核心平台、第三方電商平台 (Momo/Shopee)、金流與物流配送結盟、社群網紅 (KOL) 導購生態與會員點數生活圈。", assignee: "" },
+      { id: 7, name: "BCG 矩陣", desc: "標竿企業產品組合定位：金牛 (經典基本款)、明星 (機能/聯名熱銷款)、問題兒 (新興概念/虛擬時尚)、狗 (過季積壓品處置策略)。", assignee: "" },
+      { id: 8, name: "價值網 (Value Net)", desc: "分析顧客、供應商、競爭者與互補者 (PARTS 框架)；探討 IP 跨界聯名 (動漫、藝術家)、穿搭修圖 App 與同業合競關係。", assignee: "" }
+    ];
+
+    // 預設時程與會議
+    const defaultTimeline = [
+      { title: "第一次小組會議：分工&時間敲定", date: "10/19 - 10/23 週", note: "選定標竿品牌範疇、確立 8 大模組內容標準、拍板組員責任分配。", isHighlight: false },
+      { title: "個人獨立研究與分析製作期", date: "各自安排製作 (約3週)", note: "組員各自針對分配之工具深入蒐集次級資料、實務財報與業界案例製作初稿。", isHighlight: false },
+      { title: "第二次小組會議：初稿串聯對焦", date: "11/16 - 11/23 週", note: "模組內容交叉檢核，確認產業分析邏輯前後連貫，避免數據矛盾。", isHighlight: false },
+      { title: "第三次小組會議：精修與策略收斂", date: "11/30 - 12/07 週 (TBD)", note: "完成投資策略建議之整合、修訂視覺排版與簡報投影片母片統一。", isHighlight: false },
+      { title: "檔案定稿 & 彩排演練 (Rehearsal)", date: "12/14 - 12/16", note: "簡報 PPT 最終版本定稿、報告人走位與計時彩排、Q&A 問答準備。", isHighlight: false },
+      { title: "決戰日：列印紙本 + 期末成果報告", date: "12/17 (四) ★ D-Day", note: "依規定繳交紙本裝訂報告、正式實體發表與評審委員提問答辯。", isHighlight: true }
+    ];
+
+    let currentModules = [];
+    let currentTimeline = [];
+
+    // 初始化載入（優先順序：URL 參數 > LocalStorage > 預設值）
+    function initData() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlData = urlParams.get('data');
+
+      if (urlData) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(escape(atob(urlData))));
+          currentModules = parsed.modules || defaultModules;
+          currentTimeline = parsed.timeline || defaultTimeline;
+          saveToLocalStorage(); // 同時存進當前瀏覽器
+        } catch (e) {
+          console.error("URL 解析失敗，切換 LocalStorage", e);
+          loadFromLocalStorage();
+        }
+      } else {
+        loadFromLocalStorage();
+      }
+
+      renderTimeline();
+      renderMatrix();
+      renderRoster();
+      updateAssignedCount();
+    }
+
+    function loadFromLocalStorage() {
+      const savedModules = localStorage.getItem('pmba_modules');
+      const savedTimeline = localStorage.getItem('pmba_timeline');
+      currentModules = savedModules ? JSON.parse(savedModules) : JSON.parse(JSON.stringify(defaultModules));
+      currentTimeline = savedTimeline ? JSON.parse(savedTimeline) : JSON.parse(JSON.stringify(defaultTimeline));
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('pmba_modules', JSON.stringify(currentModules));
+      localStorage.setItem('pmba_timeline', JSON.stringify(currentTimeline));
+    }
+
+    // 渲染時程表
+    function renderTimeline() {
+      const container = document.getElementById('timeline-container');
+      container.innerHTML = "";
+      currentTimeline.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = "relative pl-6";
+        const dotColor = item.isHighlight ? "bg-rose-600" : "bg-indigo-600";
+        div.innerHTML = `
+          <div class="absolute -left-2.5 top-1.5 w-5 h-5 rounded-full ${dotColor} border-4 border-white shadow"></div>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <span class="text-sm font-bold ${item.isHighlight ? 'text-rose-700' : 'text-indigo-900'} ${isAdmin ? 'editable p-1' : ''}" 
+                  contenteditable="${isAdmin}" onblur="editTimeline(${index}, 'title', this.innerText)">
+              ${item.title}
+            </span>
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded ${item.isHighlight ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700'} ${isAdmin ? 'editable p-1' : ''}"
+                  contenteditable="${isAdmin}" onblur="editTimeline(${index}, 'date', this.innerText)">
+              ${item.date}
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1 ${isAdmin ? 'editable p-1' : ''}"
+             contenteditable="${isAdmin}" onblur="editTimeline(${index}, 'note', this.innerText)">
+            ${item.note}
+          </p>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function editTimeline(index, field, value) {
+      currentTimeline[index][field] = value.trim();
+      saveToLocalStorage();
+    }
+
+    // 渲染 8 大模組看板
+    function renderMatrix() {
+      const tbody = document.getElementById('matrix-tbody');
+      tbody.innerHTML = "";
+
+      currentModules.forEach((m, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/80 transition";
+        const isAssigned = m.assignee !== "";
+
+        let selectHtml = "";
+        if (isAdmin) {
+          selectHtml = `
+            <select onchange="changeAssignee(${idx}, this.value)" class="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white focus:ring-2 focus:ring-indigo-500 font-medium">
+              <option value="">-- 點選認領同學 --</option>
+              ${teamMembers.map(tm => `<option value="${tm.name}" ${tm.name === m.assignee ? 'selected' : ''}>${tm.name} (${tm.company})</option>`).join('')}
+            </select>
+          `;
+        } else {
+          selectHtml = isAssigned 
+            ? `<div class="text-xs font-bold text-indigo-900 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5"><i class="ph-bold ph-user-check text-indigo-600"></i> ${m.assignee}</div>`
+            : `<div class="text-xs text-slate-400 italic">尚待指派 (管理員解鎖後可選擇)</div>`;
+        }
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-center font-bold text-slate-400">0${m.id}</td>
+          <td class="py-3 px-4 font-semibold text-slate-900">${m.name}</td>
+          <td class="py-3 px-4 text-xs text-slate-600 leading-relaxed">${m.desc}</td>
+          <td class="py-3 px-4">${selectHtml}</td>
+          <td class="py-3 px-4 text-center">
+            <span class="px-2 py-0.5 rounded text-[11px] font-semibold ${isAssigned ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">
+              ${isAssigned ? '已指派' : '未指派'}
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function changeAssignee(index, value) {
+      currentModules[index].assignee = value;
+      saveToLocalStorage();
+      renderMatrix();
+      updateAssignedCount();
+    }
+
+    function updateAssignedCount() {
+      const assigned = currentModules.filter(m => m.assignee && m.assignee.trim() !== "").length;
+      document.getElementById('assigned-count').textContent = `${assigned} / 8 已認領`;
+    }
+
+    // 渲染小組成員卡片
+    function renderRoster() {
+      const container = document.getElementById('roster-container');
+      container.innerHTML = "";
+      teamMembers.forEach(m => {
+        const isCoreExpert = m.company.includes("UNIQLO");
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-xl border transition-all ${isCoreExpert ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-200' : 'bg-white border-slate-200 hover:shadow-sm'}`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded ${m.program === 'PMBA' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}">${m.program}</span>
+            <span class="text-[11px] text-slate-400 font-medium">${m.industry}</span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-2">
+            <h3 class="text-sm font-bold text-slate-900">${m.name}</h3>
+            <span class="text-xs text-slate-500">${m.role}</span>
+          </div>
+          <p class="text-xs text-indigo-900 font-semibold mt-0.5">${m.company}</p>
+          <div class="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-600 line-clamp-2">
+            ${m.highlight}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 管理員切換邏輯
+    function toggleAdminMode() {
+      if (!isAdmin) {
+        const pwd = prompt("請輸入管理員密碼以啟用編輯權限：\n(預設密碼為: pmba)");
+        if (pwd === ADMIN_PASSWORD) {
+          isAdmin = true;
+          document.getElementById('admin-btn').classList.remove('bg-slate-800', 'text-amber-300');
+          document.getElementById('admin-btn').classList.add('bg-amber-500', 'text-slate-950');
+          document.getElementById('admin-icon').className = "ph-bold ph-lock-key-open";
+          document.getElementById('admin-text').textContent = "管理員權限中 (點擊退出)";
+          document.getElementById('admin-banner').classList.remove('hidden');
+          document.getElementById('permission-pill').innerHTML = '<i class="ph-bold ph-note-pencil text-amber-600"></i> 目前狀態：管理員編輯模式';
+          document.getElementById('permission-pill').className = "text-xs bg-amber-50 text-amber-800 px-3 py-1.5 rounded-lg border border-amber-300 flex items-center gap-1.5 font-semibold";
+          renderTimeline();
+          renderMatrix();
+        } else if (pwd !== null) {
+          alert("密碼錯誤，請重新輸入！");
+        }
+      } else {
+        isAdmin = false;
+        document.getElementById('admin-btn').classList.add('bg-slate-800', 'text-amber-300');
+        document.getElementById('admin-btn').classList.remove('bg-amber-500', 'text-slate-950');
+        document.getElementById('admin-icon').className = "ph-bold ph-lock-key";
+        document.getElementById('admin-text').textContent = "管理員登入 (編輯權限)";
+        document.getElementById('admin-banner').classList.add('hidden');
+        document.getElementById('permission-pill').innerHTML = '<i class="ph-bold ph-eye"></i> 目前狀態：檢視模式';
+        document.getElementById('permission-pill').className = "text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1.5";
+        renderTimeline();
+        renderMatrix();
+      }
+    }
+
+    // 複製帶有當前狀態的分享網址
+    function copyShareableLink() {
+      const payload = {
+        modules: currentModules,
+        timeline: currentTimeline
+      };
+      const base64Data = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      const shareUrl = `${window.location.origin}${window.location.pathname}?data=${base64Data}`;
+
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        alert("🎉 同步連結已複製到剪貼簿！\n\n直接把這個連結貼到 LINE 群組，其他組員點開就能看到你剛指派好的成員名單與最新會議時間！");
+      }).catch(err => {
+        prompt("請手動複製以下分享網址：", shareUrl);
+      });
+    }
+
+    // 重設為預設資料
+    function resetData() {
+      if (confirm("確定要清除所有自訂指派與會議日期，恢復原廠設定嗎？")) {
+        localStorage.removeItem('pmba_modules');
+        localStorage.removeItem('pmba_timeline');
+        window.location.href = window.location.pathname;
+      }
+    }
+
+    window.onload = initData;
+  </script>
+</body>
+</html>
